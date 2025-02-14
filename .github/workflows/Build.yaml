@@ -1,0 +1,80 @@
+name: Docker Build on Tag
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}
+
+jobs:
+  lint:
+    name: Test and coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24.x
+
+      - name: Install dependencies
+        run: go work sync
+
+      - name: Run test for internal/mariadb
+        run: go test ./internal/mariadb
+
+      - name: Run test for mariadb-healthcheck
+        run: go test ./cmd/healthcheck
+
+      - name: Run coverage for internal/mariadb
+        run: go test -coverprofile=coverage.mariadb.txt ./internal/mariadb
+
+      - name: Run coverage for mariadb-healthcheck
+        run: go test -coverprofile=coverage.healthcheck.txt ./cmd/healthcheck
+
+      - name: Merge coverage files
+        run: |
+          echo "mode: set" > coverage.txt
+          tail -n +2 coverage.mariadb.txt >> coverage.txt
+          tail -n +2 coverage.healthcheck.txt >> coverage.txt
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build and push docker image
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKER_HUB }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
