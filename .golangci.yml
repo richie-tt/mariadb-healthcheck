@@ -1,0 +1,56 @@
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - copyloopvar
+    - dupl
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - fatcontext
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofumpt
+    - godox
+    - gofmt
+    - gomoddirectives
+    - gosec
+    - ineffassign
+    - intrange
+    - mirror
+    - mnd
+    - musttag
+    - nilerr
+    - prealloc
+    - predeclared
+    - revive
+    - sloglint
+    - stylecheck
+    - tagliatelle
+    - usetesting
+    - testifylint
+    - testpackage
+    - thelper
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - varnamelen
+    - wastedassign
+    - wrapcheck
+linters-settings:
+  tagliatelle:
+    case:
+      rules:
+        yaml: goCamel
+        json: goCamel
+      use-field-name: true
+  varnamelen:
+    ignore-names:
+      - db
+run:
+  timeout: 5m
+  allow-parallel-runners: true
+  concurrency: 4
