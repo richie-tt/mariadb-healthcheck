@@ -15,9 +15,6 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		slog.Debug("generated id", "id", c.ID)
 	}
 
-	// TODO: add context
-	// ctx := context.Background()
-
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 

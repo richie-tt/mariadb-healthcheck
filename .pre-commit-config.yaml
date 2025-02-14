@@ -1,4 +1,13 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+        exclude: .vscode
+      - id: check-yaml
+      - id: check-added-large-files
+
   - repo: local
     hooks:
       - id: hadolint
@@ -7,6 +16,18 @@ repos:
         entry: hadolint --ignore DL3008
         files: ^Dockerfile$
         pass_filenames: true
+
+      - id: go-unit-tests-healthcheck
+        name: go unit tests healthcheck
+        entry: go test -v -p=1 ./cmd/healthcheck
+        pass_filenames: false
+        language: system
+
+      - id: go-unit-tests-mariadb
+        name: go unit tests mariadb
+        entry: go test -v -p=1 ./internal/mariadb
+        pass_filenames: false
+        language: system
 
   # - repo: https://github.com/dnephin/pre-commit-golang
   #   rev: v0.5.1

@@ -1,2 +1,2 @@
 # mariadb-healtcheck
-Sidecar for MariaDB 
+Sidecar for MariaDB
