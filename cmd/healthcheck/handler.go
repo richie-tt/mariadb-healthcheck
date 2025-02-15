@@ -30,7 +30,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("failed to insert row"))
+		writeBody(w, "failed to insert row")
 		return
 	}
 
@@ -45,7 +45,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("failed to select row"))
+		writeBody(w, "failed to select row")
 		return
 	}
 
@@ -54,7 +54,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	var value string
 	if err := row.Scan(&value); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("failed to scan row"))
+		writeBody(w, "failed to scan row")
 		return
 	}
 
@@ -66,7 +66,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("failed to validate row"))
+		writeBody(w, "failed to validate row")
 		return
 	}
 
@@ -79,7 +79,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 			)
 
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("failed to delete row"))
+			writeBody(w, "failed to delete row")
 			return
 		}
 
@@ -87,5 +87,16 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	writeBody(w, "OK")
+}
+
+func writeBody(w http.ResponseWriter, message string) {
+	_, err := w.Write([]byte(message))
+	if err != nil {
+		slog.Error(
+			"failed to write body",
+			"message", message,
+			"error", err,
+		)
+	}
 }

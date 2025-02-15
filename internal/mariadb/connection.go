@@ -30,6 +30,7 @@ func (c *Connection) Validate() error {
 		return fmt.Errorf("database is empty")
 	}
 
+	fmt.Println("host", c.Host)
 	_, err := url.Parse(c.Host)
 	if err != nil {
 		return fmt.Errorf("invalid host: %w", err)

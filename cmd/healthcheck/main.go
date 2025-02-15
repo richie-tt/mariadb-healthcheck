@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -19,7 +18,6 @@ func main() {
 			"failed to parse environment",
 			"error", err,
 		)
-
 		os.Exit(1)
 	}
 
@@ -29,13 +27,11 @@ func main() {
 			"failed to connect to database",
 			"error", err,
 		)
-
 		os.Exit(1)
 	}
 
 	defer db.Close()
 
-	// TODO: check the best way to handle the db connection
 	config.DBInterface = db
 
 	mux := http.NewServeMux()
@@ -44,8 +40,8 @@ func main() {
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", config.HealthPort),
 		Handler:      mux,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  httpReadTimeout,
+		WriteTimeout: httpWriteTimeout,
 	}
 
 	slog.Info(
@@ -58,6 +54,7 @@ func main() {
 			"failed to start server",
 			"error", err,
 		)
+		db.Close() // Explicitly close the DB connection before exiting
 		os.Exit(1)
 	}
 }

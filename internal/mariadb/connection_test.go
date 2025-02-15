@@ -40,6 +40,19 @@ func TestValidate(t *testing.T) {
 		assert.ErrorContains(t, err, "host is empty")
 	})
 
+	t.Run("should return error if host is invalid", func(t *testing.T) {
+		err := (&mariadb.Connection{
+			User:     "user",
+			Password: "password",
+			Port:     "3306",
+			Database: "database",
+			Host:     "http://:[invalid]",
+		}).Validate()
+
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "invalid host")
+	})
+
 	t.Run("should return error if port is empty", func(t *testing.T) {
 		err := (&mariadb.Connection{
 			User:     "user",

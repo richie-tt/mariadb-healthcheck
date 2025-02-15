@@ -31,46 +31,66 @@ func TestGetEnv(t *testing.T) {
 }
 
 func TestParseEnv(t *testing.T) {
-	t.Run("should return default values for cleanTable", func(t *testing.T) {
-		env := getEnv()
-		parsedEnv, err := env.parseEnv()
-
-		require.NoError(t, err)
-		assert.True(t, parsedEnv.CleanTable)
-	})
-
 	t.Run("should return default values for logLevel", func(t *testing.T) {
-		t.Setenv(logLevel, "info")
-		env := getEnv()
-		parsedEnv, err := env.parseEnv()
+		t.Setenv(logLevel, "")
+		parsedEnv, err := getEnv().parseEnv()
 
 		require.NoError(t, err)
 		assert.Equal(t, "info", parsedEnv.LogLevel)
 	})
 
+	t.Run("should return error for invalid logLevel", func(t *testing.T) {
+		t.Setenv(logLevel, "invalid")
+
+		_, err := getEnv().parseEnv()
+
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "failed to parse the log level")
+	})
+
 	t.Run("should return default values for healthPort", func(t *testing.T) {
-		env := getEnv()
-		parsedEnv, err := env.parseEnv()
+		parsedEnv, err := getEnv().parseEnv()
 
 		require.NoError(t, err)
 		assert.Equal(t, 8080, parsedEnv.HealthPort)
 	})
 
 	t.Run("should return error for invalid healthPort", func(t *testing.T) {
-		env := getEnv()
-		env.HealthPort = "invalid"
-		_, err := env.parseEnv()
+		t.Setenv(healthPort, "invalid")
+		_, err := getEnv().parseEnv()
 
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "failed to parse HealthPort")
 	})
 
+	t.Run("should return parsed custom values for healthPort", func(t *testing.T) {
+		t.Setenv(healthPort, "8081")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.Equal(t, 8081, parsedEnv.HealthPort)
+	})
+
+	t.Run("should return default values for cleanTable", func(t *testing.T) {
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.True(t, parsedEnv.CleanTable)
+	})
+
 	t.Run("should return error for invalid cleanTable", func(t *testing.T) {
-		env := getEnv()
-		env.CleanTable = "invalid"
-		_, err := env.parseEnv()
+		t.Setenv(cleanTable, "invalid")
+		_, err := getEnv().parseEnv()
 
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "failed to parse CleanTable")
+	})
+
+	t.Run("should return parsed custom values for cleanTable", func(t *testing.T) {
+		t.Setenv(cleanTable, "false")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.False(t, parsedEnv.CleanTable)
 	})
 }

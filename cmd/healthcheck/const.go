@@ -12,5 +12,7 @@ const (
 	cleanTable = "CLEAN_TABLE"
 	healthPort = "HEALTH_PORT"
 
-	contextTimeout = time.Second * 5
+	contextTimeout   = time.Second * 5
+	httpReadTimeout  = time.Second * 5
+	httpWriteTimeout = time.Second * 5
 )

@@ -41,6 +41,8 @@ func (e environment) parseEnv() (*config, error) {
 			"failed to get log level, available levels: debug, info, warn, error",
 			"error", err,
 		)
+
+		return nil, fmt.Errorf("failed to parse the log level: %w", err)
 	}
 
 	slog.SetDefault(
@@ -69,6 +71,7 @@ func (e environment) parseEnv() (*config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse HealthPort: %w", err)
 		}
+
 		config.HealthPort = healthPort
 	}
 

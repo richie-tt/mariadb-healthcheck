@@ -50,6 +50,11 @@ linters-settings:
   varnamelen:
     ignore-names:
       - db
+      - w
+  gocritic:
+    disabled-checks:
+      # still complain even that before the exit the db is closed
+      - exitAfterDefer
 run:
   timeout: 5m
   allow-parallel-runners: true

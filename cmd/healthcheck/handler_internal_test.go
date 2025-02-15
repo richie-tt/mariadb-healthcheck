@@ -24,6 +24,31 @@ func decodeHTTPBody(t *testing.T, resp *http.Response) string {
 }
 
 func TestHealthHandler(t *testing.T) {
+	t.Run("should generate uuid if not set", func(t *testing.T) {
+		db, _, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		if err != nil {
+			t.Fatalf("failed to create mock database: %v", err)
+		}
+
+		defer db.Close()
+
+		server := httptest.NewServer(
+			http.HandlerFunc(
+				config{
+					DBInterface: db,
+				}.healthHandler,
+			),
+		)
+		defer server.Close()
+
+		resp, err := http.Get(server.URL)
+		body := decodeHTTPBody(t, resp)
+
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, "failed to insert row", body)
+	})
+
 	t.Run("should return failed to insert row", func(t *testing.T) {
 		uid := uuid.New()
 
@@ -247,4 +272,28 @@ func TestHealthHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, "OK", body)
 	})
+}
+
+func TestWriteBody(t *testing.T) {
+	t.Run("should write message to response body", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		writeBody(w, "test response")
+
+		assert.Equal(t, "test response", w.Body.String())
+	})
+
+	t.Run("should trigger error when writing body", func(_ *testing.T) {
+		// function used to handle coverage
+		w := &errorWriter{httptest.NewRecorder()}
+
+		writeBody(w, "test response")
+	})
+}
+
+type errorWriter struct {
+	http.ResponseWriter
+}
+
+func (e *errorWriter) Write([]byte) (int, error) {
+	return 0, errors.New("forced write error")
 }
