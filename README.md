@@ -2,8 +2,6 @@
 
 This is a **sidecar** for MariaDB that allows you to monitor the status of your database in a kubernetes environment.
 
-[[_TOC_]]
-
 ## Overview
 
 This project provides a sidecar container for MariaDB pods in Kubernetes, specifically designed to perform basic commands like `INSERT`, `SELECT` and `DELETE` on dedicated database.
@@ -54,20 +52,61 @@ spec:
         app: mariadb
     spec:
       containers:
+        # This container is used to check the health of the database
+        - name: healthcheck
+          image: richiett/mariadb-healthcheck:latest
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            failureThreshold: 4
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            failureThreshold: 1
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          ports:
+            - name: healthcheck
+              containerPort: 8080
 
+        # This container is the MariaDB container
         - name: mariadb
           image: mariadb
           ports:
-            - containerPort: 3306
+            - name: mariadb
+              containerPort: 3306
 
-        - name: healthcheck
-          image: richiett/mariadb-healthcheck:latest
-          env:
-
-            - name: DB_USER
-              value: healthcheck
-            - name: DB_PASSWORD
-              value: healthcheck
-
+          # It's important to add a readinessProbe and livenessProbe to the MariaDB container, even though MariaDB does not expose the 8080 port.
+          # If the healthcheck returns a status other than 200, Kubernetes will restart ALL containers that were configured with the same readinessProbe and livenessProbe and finally MariaDB will be restarted too.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            failureThreshold: 4
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            failureThreshold: 1
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
 
 ```
