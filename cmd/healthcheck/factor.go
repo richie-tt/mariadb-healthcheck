@@ -30,9 +30,29 @@ func (e environment) parseEnv() (*config, error) {
 		LogLevel:   e.LogLevel,
 	}
 
+	if config.Connection.Database == "" {
+		config.Connection.Database = defaultDBDatabase
+	}
+
+	if config.Connection.Host == "" {
+		config.Connection.Host = defaultDBHost
+	}
+
+	if config.Connection.Port == "" {
+		config.Connection.Port = defaultDBPort
+	}
+
+	if config.Connection.User == "" {
+		config.Connection.User = defaultDBUser
+	}
+
+	if config.Connection.Password == "" {
+		config.Connection.Password = defaultDBPassword
+	}
+
 	if e.LogLevel == "" {
 		config.LogLevel = "info"
-		slog.Debug("using default log level", "logLevel", config.LogLevel)
+		slog.Info("using default log level", "logLevel", config.LogLevel)
 	}
 
 	logLevel, err := config.getLogLevel()

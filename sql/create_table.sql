@@ -1,4 +1,4 @@
-CREATE TABLE healtcheck.status (
+CREATE TABLE healthcheck.status (
 	uuid varchar(50) NOT NULL
 )
 ENGINE=MEMORY

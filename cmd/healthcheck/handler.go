@@ -12,7 +12,11 @@ import (
 func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	if c.ID == uuid.Nil {
 		c.ID = uuid.New()
-		slog.Debug("generated id", "id", c.ID)
+
+		slog.Debug(
+			"generated UUID",
+			"value", c.ID,
+		)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
@@ -34,7 +38,10 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	slog.Debug("inserted row", "id", c.ID)
+	slog.Debug(
+		"Executed query to insert row",
+		"UUID", c.ID,
+	)
 
 	row, err := query.SelectRow(ctx, c.DBInterface)
 	if err != nil {
@@ -49,7 +56,10 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	slog.Debug("selected row", "id", c.ID)
+	slog.Debug(
+		"Executed query to select row",
+		"UUID", c.ID,
+	)
 
 	var value string
 	if err := row.Scan(&value); err != nil {
@@ -83,7 +93,10 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		slog.Debug("deleted row", "id", c.ID)
+		slog.Debug(
+			"Executed query to delete row",
+			"UUID", c.ID,
+		)
 	}
 
 	w.WriteHeader(http.StatusOK)

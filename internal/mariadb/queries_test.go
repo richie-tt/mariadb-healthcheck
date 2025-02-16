@@ -28,7 +28,7 @@ func TestInsertRow(t *testing.T) {
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		require.Error(t, err)
-		assert.ErrorContains(t, err, "failed to insert")
+		assert.ErrorContains(t, err, "InsertRow")
 	})
 
 	t.Run("should insert row successfully", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestSelectRow(t *testing.T) {
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		require.Error(t, err)
-		assert.ErrorContains(t, err, "failed to select")
+		assert.ErrorContains(t, err, "SelectRow")
 	})
 }
 
@@ -130,6 +130,6 @@ func TestDeleteRow(t *testing.T) {
 
 		require.Error(t, err)
 		require.NoError(t, mock.ExpectationsWereMet())
-		assert.ErrorContains(t, err, "failed to delete")
+		assert.ErrorContains(t, err, "DeleteRow")
 	})
 }

@@ -15,4 +15,10 @@ const (
 	contextTimeout   = time.Second * 5
 	httpReadTimeout  = time.Second * 5
 	httpWriteTimeout = time.Second * 5
+
+	defaultDBUser     = "healthcheck"
+	defaultDBPassword = "healthcheck"
+	defaultDBHost     = "127.0.0.1"
+	defaultDBPort     = "3306"
+	defaultDBDatabase = "healthcheck"
 )

@@ -31,6 +31,46 @@ func TestGetEnv(t *testing.T) {
 }
 
 func TestParseEnv(t *testing.T) {
+	t.Run("should return default values for database", func(t *testing.T) {
+		t.Setenv(dbDatabase, "")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.Equal(t, "healthcheck", parsedEnv.Connection.Database)
+	})
+
+	t.Run("should return default values for host", func(t *testing.T) {
+		t.Setenv(dbHost, "")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.Equal(t, "127.0.0.1", parsedEnv.Connection.Host)
+	})
+
+	t.Run("should return default values for port", func(t *testing.T) {
+		t.Setenv(dbPort, "")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.Equal(t, "3306", parsedEnv.Connection.Port)
+	})
+
+	t.Run("should return default values for user", func(t *testing.T) {
+		t.Setenv(dbUser, "")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.Equal(t, "healthcheck", parsedEnv.Connection.User)
+	})
+
+	t.Run("should return default values for password", func(t *testing.T) {
+		t.Setenv(dbPassword, "")
+		parsedEnv, err := getEnv().parseEnv()
+
+		require.NoError(t, err)
+		assert.Equal(t, "healthcheck", parsedEnv.Connection.Password)
+	})
+
 	t.Run("should return default values for logLevel", func(t *testing.T) {
 		t.Setenv(logLevel, "")
 		parsedEnv, err := getEnv().parseEnv()

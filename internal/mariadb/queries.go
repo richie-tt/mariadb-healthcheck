@@ -10,7 +10,7 @@ import (
 func (q Query) InsertRow(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(ctx, "INSERT INTO status (uuid) VALUES (?)", q.Value)
 	if err != nil {
-		return fmt.Errorf("failed to insert: %w", err)
+		return fmt.Errorf("InsertRow: %w", err)
 	}
 
 	return nil
@@ -20,7 +20,7 @@ func (q Query) InsertRow(ctx context.Context, db *sql.DB) error {
 func (q Query) SelectRow(ctx context.Context, db *sql.DB) (*sql.Row, error) {
 	row := db.QueryRowContext(ctx, "SELECT uuid FROM status WHERE uuid = ?", q.Value)
 	if row.Err() != nil {
-		return nil, fmt.Errorf("failed to select: %w", row.Err())
+		return nil, fmt.Errorf("SelectRow: %w", row.Err())
 	}
 
 	return row, nil
@@ -28,10 +28,9 @@ func (q Query) SelectRow(ctx context.Context, db *sql.DB) (*sql.Row, error) {
 
 // DeleteRow deletes a row from the database
 func (q Query) DeleteRow(ctx context.Context, db *sql.DB) error {
-	// func (q Query) DeleteRow(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(ctx, "DELETE FROM status WHERE uuid = ?", q.Value)
 	if err != nil {
-		return fmt.Errorf("failed to delete: %w", err)
+		return fmt.Errorf("DeleteRow: %w", err)
 	}
 
 	return nil
