@@ -4,7 +4,7 @@ This is a **sidecar** for MariaDB that allows you to monitor the status of your 
 
 ## Overview
 
-This project provides a sidecar container for MariaDB pods in Kubernetes, specifically designed to perform basic commands like `INSERT`, `SELECT` and `DELETE` on dedicated database.
+This project provides a sidecar container for **MariaDB** pods in Kubernetes, specifically designed to perform basic commands like `INSERT`, `SELECT` and `DELETE` on dedicated database.
 
 ## Installation
 
@@ -18,12 +18,13 @@ CREATE USER 'healthcheck'@'127.0.0.1' IDENTIFIED BY 'healthcheck';
 GRANT ALL PRIVILEGES ON `healthcheck`.* TO 'healthcheck'@'127.0.0.1';
 ```
 
-Create a table with engine `MEMORY` to store the status of the database:
+Create a table with engine `ARIA` to store the status of the database:
+
 ```sql
 CREATE TABLE healthcheck.status (
 	uuid varchar(50) NOT NULL
 )
-ENGINE=MEMORY
+ENGINE=ARIA
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 ```
