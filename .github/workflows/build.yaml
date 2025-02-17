@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  lint:
+  test:
     name: Test and coverage
     runs-on: ubuntu-latest
     steps:

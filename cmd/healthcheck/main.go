@@ -127,6 +127,10 @@ func run() error {
 
 	server := setupServer(*config)
 
+	// not sure about that
+
+	defer server.Close()
+
 	slog.Info(
 		"starting health check server",
 		"port", config.HealthPort,
