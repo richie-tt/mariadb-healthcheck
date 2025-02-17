@@ -11,54 +11,67 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var (
+	// Version is the application version
+	Version = ""
+	// BuildDate is the date the application was built
+	BuildDate = ""
+	// Commit is the git commit hash the application was built from
+	Commit = ""
+)
+
 func main() {
-	env := getEnv()
-
-	config, err := env.parseEnv()
-	if err != nil {
-		slog.Error(
-			"failed to parse environment",
-			"error", err,
-		)
+	if err := run(); err != nil {
+		slog.Error("application error", "error", err)
 		os.Exit(1)
 	}
+	// env := getEnv()
 
-	db, err := config.Connection.ConnectDB()
-	if err != nil {
-		slog.Error(
-			"failed to connect to database",
-			"error", err,
-		)
-		os.Exit(1)
-	}
+	// config, err := env.parseEnv()
+	// if err != nil {
+	// 	slog.Error(
+	// 		"failed to parse environment",
+	// 		"error", err,
+	// 	)
+	// 	os.Exit(1)
+	// }
 
-	defer db.Close()
+	// db, err := config.Connection.ConnectDB()
+	// if err != nil {
+	// 	slog.Error(
+	// 		"failed to connect to database",
+	// 		"error", err,
+	// 	)
+	// 	os.Exit(1)
+	// }
 
-	config.DBInterface = db
+	// defer db.Close()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", config.healthHandler)
+	// config.DBInterface = db
 
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", config.HealthPort),
-		Handler:      mux,
-		ReadTimeout:  httpReadTimeout,
-		WriteTimeout: httpWriteTimeout,
-	}
+	// mux := http.NewServeMux()
+	// mux.HandleFunc("/health", config.healthHandler)
 
-	slog.Info(
-		"starting health check server",
-		"port", config.HealthPort,
-	)
+	// server := &http.Server{
+	// 	Addr:         fmt.Sprintf(":%d", config.HealthPort),
+	// 	Handler:      mux,
+	// 	ReadTimeout:  httpReadTimeout,
+	// 	WriteTimeout: httpWriteTimeout,
+	// }
 
-	if err := server.ListenAndServe(); err != nil {
-		slog.Error(
-			"failed to start server",
-			"error", err,
-		)
-		db.Close() // Explicitly close the DB connection before exiting
-		os.Exit(1)
-	}
+	// slog.Info(
+	// 	"starting health check server",
+	// 	"port", config.HealthPort,
+	// )
+
+	// if err := server.ListenAndServe(); err != nil {
+	// 	slog.Error(
+	// 		"failed to start server",
+	// 		"error", err,
+	// 	)
+	// 	db.Close() // Explicitly close the DB connection before exiting
+	// 	os.Exit(1)
+	// }
 }
 
 func (c config) getLogLevel() (slog.Level, error) {
@@ -74,4 +87,54 @@ func (c config) getLogLevel() (slog.Level, error) {
 	default:
 		return slog.LevelInfo, fmt.Errorf("invalid log level: %s", c.LogLevel)
 	}
+}
+
+func setupServer(config config) *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", config.healthHandler)
+
+	return &http.Server{
+		Addr:         fmt.Sprintf(":%d", config.HealthPort),
+		Handler:      mux,
+		ReadTimeout:  httpReadTimeout,
+		WriteTimeout: httpWriteTimeout,
+	}
+}
+
+// func run(config *config) error {
+func run() error {
+	slog.Info(
+		"starting healthcheck",
+		"version", Version,
+		"commit", Commit,
+		"build_date", BuildDate,
+	)
+
+	env := getEnv()
+
+	config, err := env.parseEnv()
+	if err != nil {
+		return fmt.Errorf("failed to parse environment: %w", err)
+	}
+
+	db, err := config.Connection.ConnectDB()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer db.Close()
+
+	config.DBInterface = db
+
+	server := setupServer(*config)
+
+	slog.Info(
+		"starting health check server",
+		"port", config.HealthPort,
+	)
+
+	if err := server.ListenAndServe(); err != nil {
+		return fmt.Errorf("failed to start server: %w", err)
+	}
+
+	return nil
 }

@@ -1,14 +1,14 @@
 # mariadb-healthcheck
-
+[![Test and Build](https://github.com/richie-tt/mariadb-healthcheck/actions/workflows/build.yaml/badge.svg?branch=master)](https://github.com/richie-tt/mariadb-healthcheck/actions)
 [![codecov](https://codecov.io/gh/richie-tt/mariadb-healthcheck/branch/master/graph/badge.svg)](https://codecov.io/gh/richie-tt/mariadb-healthcheck)
 
 ## Overview
 
-This project provides a sidecar container for **MariaDB** pods in Kubernetes, specifically designed to perform basic commands like INSERT, SELECT, and DELETE on a dedicated database and expose the result as a HTTP endpoint. This allow Kubernetes to restart the **MariaDB** container if the database is not healthy.
+This project provides a sidecar container for **MariaDB** pods in Kubernetes, specifically designed to perform basic commands like `INSERT`, `SELECT`, and `DELETE` on a dedicated database and expose the result as a HTTP endpoint. This allow Kubernetes to restart the **MariaDB** container if the database is not healthy.
 
 ### How it works
 
-The `mariadb-healthcheck` container will perform a check on the database by executing in sequence the `INSERT`, `SELECT`, and `DELETE` commands:
+`mariadb-healthcheck` will perform a database check by executing `INSERT`, `SELECT`, and `DELETE` commands in sequence. To understand the process, refer to the flowchart.
 
 ```mermaid
 flowchart LR
@@ -19,10 +19,10 @@ flowchart LR
     D --> E
 ```
 
-On base of the checks results, Kubernetes will restart the **MariaDB** container even though the **MariaDB** container is not exposing the HTTP server on port `8080`.
+Based on the results of the check, Kubernetes will restart the specified containers. Now the key is to configure `livenessProbe` and `readinessProbe` for the MariaDB service,
+so if the healthcheck returns an error, MariaDB will be restarted.
 
-
-From bellow diagram you can notice that the `livenessProbe` and `readinessProbe` checks from the **MariaDB** container will be performed on the `mariadb-healthcheck` container HTTP server endpoint, this will allow Kubernetes to restart the **MariaDB** container if the database is not healthy.
+I also highly recommend configuring `livenessProbe` and `readinessProbe` for the `mariadb-healthcheck` container, in case it hangs. Please refer to the diagram below.
 
 ![liveness_and_readiness](./assets/liveness_and_readiness.svg)
 
@@ -30,23 +30,23 @@ From bellow diagram you can notice that the `livenessProbe` and `readinessProbe`
 
 Environment variables:
 
-| Variable    | Required | Default       | Description                                                                                                                                                                                                |
-| ----------- | -------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DELETE_ROW  | No       | `true`        | After executing `INSERT` and `SELECT` commands, `DELETE` command only deletes the created row in the table. For debugging purposes, you can disable the delete process by setting this variable to `false` |
-| DB_HOST     | No       | `127.0.0.1`   | The host of the database                                                                                                                                                                                   |
-| DB_NAME     | No       | `healthcheck` | The name of the database                                                                                                                                                                                   |
-| DB_PASSWORD | No       | `healthcheck` | The password of the database                                                                                                                                                                               |
-| DB_PORT     | No       | `3306`        | The port of the database                                                                                                                                                                                   |
-| DB_USER     | No       | `healthcheck` | The user of the database                                                                                                                                                                                   |
-| HEALTH_PORT | No       | `8080`        | The port of HTTP server, where status of check is exposed                                                                                                                                                  |
-| LOG_LEVEL   | No       | `info`        | The log level, `debug`, `info`, `warn`, `error`                                                                                                                                                            |
+| Variable    | Required | Default       | Description                                                                                                                                         |
+| ----------- | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DELETE_ROW  | No       | `true`        | After executing `INSERT` and `SELECT` commands, `DELETE` command can be skipped by setting this variable to `false`, useful for debugging purposes. |
+| DB_HOST     | No       | `127.0.0.1`   | Address of the database.                                                                                                                            |
+| DB_NAME     | No       | `healthcheck` | Name of the MariaDB database, where checks will be performed.                                                                                       |
+| DB_PASSWORD | No       | `healthcheck` | MariaDB user password.                                                                                                                              |
+| DB_PORT     | No       | `3306`        | MariaDB port.                                                                                                                                       |
+| DB_USER     | No       | `healthcheck` | MariaDB user name.                                                                                                                                  |
+| HEALTH_PORT | No       | `8080`        | The port of HTTP server, where status of check is exposed.                                                                                          |
+| LOG_LEVEL   | No       | `info`        | Log level, available options are `debug`, `info`, `warn`, `error`.                                                                                  |
 
 
 ## Installation
 
 ### Database
 
-Create a database and a user with the following privileges:
+Create a database and a user with the following permissions:
 
 ```sql
 CREATE DATABASE `healthcheck` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
@@ -54,14 +54,19 @@ CREATE USER 'healthcheck'@'127.0.0.1' IDENTIFIED BY 'healthcheck';
 GRANT ALL PRIVILEGES ON `healthcheck`.* TO 'healthcheck'@'127.0.0.1';
 ```
 
-Create a table with specific engine and charset to store the status of the database:
+Create a table with a specially selected engine. It is important to understand that different engines have different characteristic properties, I would consider the following:
 
-- `ENGINE=MEMORY` will perform the check on a database that is stored in memory and all data for the check will be lost when the container is restarted, this is not a problem for `mariadb-healthcheck` because it just executes simple commands like `INSERT`, `SELECT`, and `DELETE` on the database. This engine can be a good choice if you want to check the status of the database without impacting its performance.
+- `ENGINE=MEMORY` will perform a check on the database which is stored in memory and all the data for the check will be lost after the container is restarted,
+  this is not a problem for `mariadb-healthcheck` as it just executes simple commands like `INSERT`, `SELECT` and `DELETE` on the database.
+
+  This engine can be a good choice if you want to check the health of the database without affecting its performance.
 
   > [!WARNING]
   >  You need to be aware that `MEMORY` engine will not check if the Kubernetes `volume` is configured correctly to preform the write operation.
 
-- `ENGINE=ARIA` will perform a check on the database which stores the result of an operation on the disk,  which will allow you to get a better overview of the database status. This engine can have a negative impact on the performance of the database, where a huge load is expected.
+- `ENGINE=ARIA` will perform a database check that stores the result of the operation on disk, which will allow you to get a better overview of the database status.
+  This engine can have a negative impact on the performance of the database where a huge load is expected.
+
 
 ```sql
 CREATE TABLE healthcheck.status (
@@ -130,7 +135,7 @@ spec:
             - name: mariadb
               containerPort: 3306
 
-          # It's important to add a readinessProbe and livenessProbe to the MariaDB container, even though MariaDB does not expose the 8080 port.
+          # It's important to add a readinessProbe and livenessProbe to the MariaDB container, which points to the healthcheck container.
           readinessProbe:
             httpGet:
               path: /health
@@ -152,3 +157,7 @@ spec:
             successThreshold: 1
             timeoutSeconds: 5
 ```
+
+## Resources:
+
+- [Docker image](https://hub.docker.com/r/richiett/mariadb-healthcheck)

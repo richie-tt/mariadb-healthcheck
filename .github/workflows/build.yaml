@@ -1,4 +1,4 @@
-name: Docker Build on Tag
+name: Lint, Test and Build
 
 on:
   push:
