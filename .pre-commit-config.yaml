@@ -50,13 +50,4 @@ repos:
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:
-      # - id: go-fmt
-      # - id: go-vet
-      # - id: golangci-lint
-      #   args: ["--fast", "--timeout=5m"]
-      # - id: go-imports
-      # - id: go-cyclo
-      #   args: [-over=15]
-      # - id: go-critic
-      # - id: go-build
       - id: go-mod-tidy
