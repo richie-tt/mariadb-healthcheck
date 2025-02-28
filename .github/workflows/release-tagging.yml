@@ -3,7 +3,7 @@ name: Release tagging
 on:
   push:
     branches:
-      - release/v**
+      - master
   workflow_dispatch: {}
 
 defaults:
@@ -16,8 +16,7 @@ jobs:
       contents: write
       actions: write
     name: Release tagging
-    runs-on:
-      - portcullis
+    runs-on: ubuntu-latest
     env:
       BASE_DIR: ${{ github.workspace }}
 
