@@ -4,7 +4,7 @@ echo "Starting the release tagging process"
 
 function getMajorVersion() {
   local BRANCH=$(git branch --show-current)
-  if [[ ${BRANCH} == *"release"* ]]; then
+  if [[ ${BRANCH} == *"master"* ]]; then
     echo $(echo ${BRANCH} | grep -o -E 'v[0-9]+')
   else
     echo wrong_branch
@@ -18,11 +18,11 @@ function getLatestTag() {
 MAJOR=$(getMajorVersion)
 
 if [[ ${MAJOR} == "wrong_branch" ]]; then
-  echo "This is not release/v* branch. Nothing to do"
+  echo "This is not master branch. Nothing to do"
   exit 1
 fi
 
-# get highest tag in specific release/v* branch
+# get highest tag in specific branch
 LATEST_TAG=$(getLatestTag)
 
 if [[ ${LATEST_TAG} == '' ]]; then
