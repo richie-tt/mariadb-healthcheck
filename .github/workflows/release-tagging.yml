@@ -10,27 +10,18 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
-  release-tagging:
-    permissions:
-      contents: write
-      actions: write
-    name: Release tagging
+  release-on-push:
     runs-on: ubuntu-latest
     env:
-      BASE_DIR: ${{ github.workspace }}
-
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
-      - name: Checkout git repository
-        uses: actions/checkout@v4
+      - name: Tag/Release on Push Action
+        uses: rymndhng/release-on-push-action@v0.28.0
         with:
-          fetch-depth: "0"
-
-      - name: Install GitHub CLI
-        run: .github/scripts/install-github-cli.sh
-
-      - name: Tag release
-        uses: ./.github/actions/release-tagger
-        env:
-          GH_ENTERPRISE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_HOST: github.hexagon.com
+          tag_prefix: "v"
+          bump_version_scheme: minor

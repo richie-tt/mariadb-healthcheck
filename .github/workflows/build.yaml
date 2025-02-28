@@ -7,8 +7,6 @@ on:
       - reopened
       - synchronize
   push:
-    branches:
-      - master
     tags:
       - "v*"
   workflow_dispatch: {}
