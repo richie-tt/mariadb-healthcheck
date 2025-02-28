@@ -1,0 +1,43 @@
+name: Action release tagger
+description: Automatically manage action releases
+author: tj-actions
+inputs:
+  token:
+    description: '[GITHUB\_TOKEN](https://docs.github.com/en/free-pro-team@latest/actions/reference/authentication-in-a-workflow#using-the-github_token-in-a-workflow) or a repo scoped [Personal Access Token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)'
+    required: false
+    default: ${{ github.token }}
+  gh_token:
+    description: "Github CLI token"
+    required: false
+    default: ${{ github.token }}
+  release_notes_file:
+    description: "File to write release notes to"
+    required: true
+    default: "RELEASE_NOTES.md"
+outputs:
+  major_version:
+    description: The latest major version
+    value: ${{ steps.release-tagger.outputs.major_version }}
+  new_version:
+    description: The new version
+    value: ${{ steps.release-tagger.outputs.new_version }}
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        bash $GITHUB_ACTION_PATH/entrypoint.sh
+      id: release-tagger
+      shell: bash
+      env:
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_SERVER_URL: ${{ github.server_url }}
+        GITHUB_REF: ${{ github.ref }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        INPUTS_TOKEN: ${{ inputs.token }}
+        INPUTS_RELEASE_NOTES_FILE: ${{ inputs.release_notes_file }}
+
+branding:
+  icon: tag
+  color: white

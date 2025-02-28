@@ -1,0 +1,37 @@
+name: Release tagging
+
+on:
+  push:
+    branches:
+      - release/v**
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release-tagging:
+    permissions:
+      contents: write
+      actions: write
+    name: Release tagging
+    runs-on:
+      - portcullis
+    env:
+      BASE_DIR: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+
+      - name: Install GitHub CLI
+        run: .github/scripts/install-github-cli.sh
+
+      - name: Tag release
+        uses: ./.github/actions/release-tagger
+        env:
+          GH_ENTERPRISE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_HOST: github.hexagon.com
