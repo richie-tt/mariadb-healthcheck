@@ -1,0 +1,17 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 85%    # the required coverage value
+        threshold: 1%  # the leniency in hitting the target
+
+component_management:
+  individual_components:
+    - component_id: mariadb
+      name: mariadb
+      paths:
+        - internal/mariadb
+    - component_id: healthcheck
+      name: healthcheck
+      paths:
+        - cmd/healthcheck
