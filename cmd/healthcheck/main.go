@@ -25,53 +25,6 @@ func main() {
 		slog.Error("application error", "error", err)
 		os.Exit(1)
 	}
-	// env := getEnv()
-
-	// config, err := env.parseEnv()
-	// if err != nil {
-	// 	slog.Error(
-	// 		"failed to parse environment",
-	// 		"error", err,
-	// 	)
-	// 	os.Exit(1)
-	// }
-
-	// db, err := config.Connection.ConnectDB()
-	// if err != nil {
-	// 	slog.Error(
-	// 		"failed to connect to database",
-	// 		"error", err,
-	// 	)
-	// 	os.Exit(1)
-	// }
-
-	// defer db.Close()
-
-	// config.DBInterface = db
-
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("/health", config.healthHandler)
-
-	// server := &http.Server{
-	// 	Addr:         fmt.Sprintf(":%d", config.HealthPort),
-	// 	Handler:      mux,
-	// 	ReadTimeout:  httpReadTimeout,
-	// 	WriteTimeout: httpWriteTimeout,
-	// }
-
-	// slog.Info(
-	// 	"starting health check server",
-	// 	"port", config.HealthPort,
-	// )
-
-	// if err := server.ListenAndServe(); err != nil {
-	// 	slog.Error(
-	// 		"failed to start server",
-	// 		"error", err,
-	// 	)
-	// 	db.Close() // Explicitly close the DB connection before exiting
-	// 	os.Exit(1)
-	// }
 }
 
 func (c config) getLogLevel() (slog.Level, error) {
@@ -101,7 +54,6 @@ func setupServer(config config) *http.Server {
 	}
 }
 
-// func run(config *config) error {
 func run() error {
 	slog.Info(
 		"starting healthcheck",
@@ -126,8 +78,6 @@ func run() error {
 	config.DBInterface = db
 
 	server := setupServer(*config)
-
-	// not sure about that
 
 	defer server.Close()
 
