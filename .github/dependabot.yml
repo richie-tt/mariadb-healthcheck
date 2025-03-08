@@ -5,7 +5,11 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "gomod"
+    directory: "/internal/mariadb"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/cmd/healthcheck"
     schedule:
       interval: "weekly"
