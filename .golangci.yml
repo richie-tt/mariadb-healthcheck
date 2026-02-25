@@ -1,5 +1,9 @@
+version: "2"
+run:
+  concurrency: 4
+  allow-parallel-runners: true
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     - copyloopvar
@@ -12,9 +16,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofumpt
     - godox
-    - gofmt
     - gomoddirectives
     - gosec
     - ineffassign
@@ -27,9 +29,8 @@ linters:
     - predeclared
     - revive
     - sloglint
-    - stylecheck
+    - staticcheck
     - tagliatelle
-    - usetesting
     - testifylint
     - testpackage
     - thelper
@@ -37,25 +38,42 @@ linters:
     - unparam
     - unused
     - usestdlibvars
+    - usetesting
     - varnamelen
     - wastedassign
     - wrapcheck
-linters-settings:
-  tagliatelle:
-    case:
-      rules:
-        yaml: goCamel
-        json: goCamel
-      use-field-name: true
-  varnamelen:
-    ignore-names:
-      - db
-      - w
-  gocritic:
-    disabled-checks:
-      # still complain even that before the exit the db is closed
-      - exitAfterDefer
-run:
-  timeout: 5m
-  allow-parallel-runners: true
-  concurrency: 4
+  settings:
+    gocritic:
+      disabled-checks:
+        - exitAfterDefer
+    tagliatelle:
+      case:
+        rules:
+          json: goCamel
+          yaml: goCamel
+        use-field-name: true
+    varnamelen:
+      ignore-names:
+        - db
+        - w
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

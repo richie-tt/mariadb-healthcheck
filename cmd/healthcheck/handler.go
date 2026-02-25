@@ -13,7 +13,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	if c.ID == uuid.Nil {
 		c.ID = uuid.New()
 
-		slog.Debug(
+		slog.Debug( //nolint:G706 // UUID has fixed format
 			"generated UUID",
 			"value", c.ID,
 		)
@@ -38,7 +38,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	slog.Debug(
+	slog.Debug( //nolint:G706 // UUID has fixed format
 		"Executed query to insert row",
 		"UUID", c.ID,
 	)
@@ -56,7 +56,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	slog.Debug(
+	slog.Debug( //nolint:G706 // UUID has fixed format
 		"Executed query to select row",
 		"UUID", c.ID,
 	)
@@ -69,7 +69,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	if value != c.ID.String() {
-		slog.Error(
+		slog.Error( //nolint:G706 // UUID has fixed format
 			"Value is not the same",
 			"expected", c.ID.String(),
 			"got", value,
@@ -93,7 +93,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		slog.Debug(
+		slog.Debug( //nolint:G706 // UUID has fixed format
 			"Executed query to delete row",
 			"UUID", c.ID,
 		)
