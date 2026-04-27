@@ -13,7 +13,7 @@ import (
 func (c config) healthHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.New()
 
-	slog.Debug( //nolint:G706 // UUID has fixed format
+	slog.Debug(
 		"generated UUID",
 		"value", id,
 	)

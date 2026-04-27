@@ -29,7 +29,7 @@ func RunCheck(ctx context.Context, db *sql.DB, uuid string, deleteRow bool) erro
 		return fmt.Errorf("%w: %v", ErrInsert, err)
 	}
 
-	slog.Debug( //nolint:G706 // UUID has fixed format
+	slog.Debug(
 		"Executed query to insert row",
 		"UUID", uuid,
 	)
@@ -39,7 +39,7 @@ func RunCheck(ctx context.Context, db *sql.DB, uuid string, deleteRow bool) erro
 		return fmt.Errorf("%w: %v", ErrSelect, err)
 	}
 
-	slog.Debug( //nolint:G706 // UUID has fixed format
+	slog.Debug(
 		"Executed query to select row",
 		"UUID", uuid,
 	)
@@ -60,7 +60,7 @@ func RunCheck(ctx context.Context, db *sql.DB, uuid string, deleteRow bool) erro
 			return fmt.Errorf("%w: %v", ErrDelete, err)
 		}
 
-		slog.Debug( //nolint:G706 // UUID has fixed format
+		slog.Debug(
 			"Executed query to delete row",
 			"UUID", uuid,
 		)
