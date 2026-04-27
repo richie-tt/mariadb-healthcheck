@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetupServer(t *testing.T) {
@@ -43,4 +46,25 @@ func TestRun(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+}
+
+func TestRun_gracefulShutdown(t *testing.T) {
+	// We can't easily exercise the full run() path in a unit test (it dials
+	// a real DB). Verify instead that an http.Server returned by setupServer
+	// supports Shutdown without error.
+	srv := setupServer(config{HealthPort: 0})
+
+	listenErr := make(chan error, 1)
+	go func() {
+		listenErr <- srv.ListenAndServe()
+	}()
+
+	// Give the listener a moment to bind.
+	time.Sleep(50 * time.Millisecond)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	require.NoError(t, srv.Shutdown(ctx))
+	require.ErrorIs(t, <-listenErr, http.ErrServerClosed)
 }

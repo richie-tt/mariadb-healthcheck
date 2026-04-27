@@ -17,6 +17,7 @@ const (
 	httpReadHeaderTimeout = time.Second * 5
 	httpWriteTimeout      = time.Second * 5
 	httpIdleTimeout       = time.Second * 30
+	shutdownTimeout       = time.Second * 5
 
 	defaultDBUser     = "healthcheck"
 	defaultDBPassword = "healthcheck"
