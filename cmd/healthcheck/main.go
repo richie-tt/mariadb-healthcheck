@@ -47,10 +47,12 @@ func setupServer(config config) *http.Server {
 	mux.HandleFunc("/health", config.healthHandler)
 
 	return &http.Server{
-		Addr:         fmt.Sprintf(":%d", config.HealthPort),
-		Handler:      mux,
-		ReadTimeout:  httpReadTimeout,
-		WriteTimeout: httpWriteTimeout,
+		Addr:              fmt.Sprintf(":%d", config.HealthPort),
+		Handler:           mux,
+		ReadTimeout:       httpReadTimeout,
+		ReadHeaderTimeout: httpReadHeaderTimeout,
+		WriteTimeout:      httpWriteTimeout,
+		IdleTimeout:       httpIdleTimeout,
 	}
 }
 

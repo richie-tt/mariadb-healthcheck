@@ -12,9 +12,11 @@ const (
 	deleteRow  = "DELETE_ROW"
 	healthPort = "HEALTH_PORT"
 
-	contextTimeout   = time.Second * 5
-	httpReadTimeout  = time.Second * 5
-	httpWriteTimeout = time.Second * 5
+	contextTimeout        = time.Second * 5
+	httpReadTimeout       = time.Second * 5
+	httpReadHeaderTimeout = time.Second * 5
+	httpWriteTimeout      = time.Second * 5
+	httpIdleTimeout       = time.Second * 30
 
 	defaultDBUser     = "healthcheck"
 	defaultDBPassword = "healthcheck"

@@ -17,6 +17,8 @@ func TestSetupServer(t *testing.T) {
 		assert.NotNil(t, server.Handler)
 		assert.Equal(t, httpReadTimeout, server.ReadTimeout)
 		assert.Equal(t, httpWriteTimeout, server.WriteTimeout)
+		assert.Equal(t, httpReadHeaderTimeout, server.ReadHeaderTimeout)
+		assert.Equal(t, httpIdleTimeout, server.IdleTimeout)
 
 		// Test server closes properly
 		err := server.Close()
