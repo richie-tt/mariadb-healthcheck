@@ -7,6 +7,8 @@ on:
       - reopened
       - synchronize
   push:
+    branches:
+      - master
     tags:
       - "v*"
   workflow_dispatch: {}
@@ -29,6 +31,12 @@ jobs:
         with:
           version: v2.8.0
 
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+
   test:
     name: Test and coverage
     runs-on: ubuntu-latest
@@ -41,23 +49,8 @@ jobs:
         with:
           go-version: 1.25.x
 
-      - name: Run test for internal/mariadb
-        run: go test ./internal/mariadb
-
-      - name: Run test for mariadb-healthcheck
-        run: go test ./cmd/healthcheck
-
-      - name: Run coverage for internal/mariadb
-        run: go test -coverprofile=coverage.mariadb.txt ./internal/mariadb
-
-      - name: Run coverage for mariadb-healthcheck
-        run: go test -coverprofile=coverage.healthcheck.txt ./cmd/healthcheck
-
-      - name: Merge coverage files
-        run: |
-          echo "mode: set" > coverage.txt
-          tail -n +2 coverage.mariadb.txt >> coverage.txt
-          tail -n +2 coverage.healthcheck.txt >> coverage.txt
+      - name: Run tests with coverage
+        run: go test -coverprofile=coverage.txt ./...
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
@@ -74,6 +67,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -94,9 +92,10 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

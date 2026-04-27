@@ -1,9 +1,10 @@
 name: Release tagging
 
 on:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: ["Lint, Test and Build"]
+    types: [completed]
+    branches: [master]
   workflow_dispatch: {}
 
 defaults:
@@ -14,9 +15,14 @@ permissions:
   contents: write
   pull-requests: read
 
+concurrency:
+  group: release-tagging
+  cancel-in-progress: false
+
 jobs:
   release-on-push:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     env:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
