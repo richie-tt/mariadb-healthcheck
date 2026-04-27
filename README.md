@@ -35,7 +35,7 @@ Environment variables:
 | DELETE_ROW  | No       | `true`        | After executing `INSERT` and `SELECT` commands, `DELETE` command can be skipped by setting this variable to `false`, useful for debugging purposes. |
 | DB_HOST     | No       | `127.0.0.1`   | Address of the database.                                                                                                                            |
 | DB_NAME     | No       | `healthcheck` | Name of the MariaDB database, where checks will be performed.                                                                                       |
-| DB_PASSWORD | No       | `healthcheck` | MariaDB user password.                                                                                                                              |
+| DB_PASSWORD | **Yes**  | _(none)_      | MariaDB user password. The container will refuse to start if this is unset.                                                                         |
 | DB_PORT     | No       | `3306`        | MariaDB port.                                                                                                                                       |
 | DB_USER     | No       | `healthcheck` | MariaDB user name.                                                                                                                                  |
 | HEALTH_PORT | No       | `8080`        | The port of HTTP server, where status of check is exposed.                                                                                          |

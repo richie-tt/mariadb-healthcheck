@@ -48,7 +48,7 @@ func (e environment) parseEnv() (*config, error) {
 	}
 
 	if config.Connection.Password == "" {
-		config.Connection.Password = defaultDBPassword
+		return nil, fmt.Errorf("DB_PASSWORD environment variable is required")
 	}
 
 	if e.LogLevel == "" {
