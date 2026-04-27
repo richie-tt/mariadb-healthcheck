@@ -86,6 +86,45 @@ func TestHealthHandler(t *testing.T) {
 		assert.Equal(t, "failed to select row", body)
 	})
 
+	t.Run("should return failed to scan row when scan errors", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		if err != nil {
+			t.Fatalf("failed to create mock database: %v", err)
+		}
+
+		defer db.Close()
+		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
+			WithArgs(sqlmock.AnyArg()).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		// A row exists but scanning it fails — this is the ErrScan path,
+		// distinct from the sql.ErrNoRows path that maps to ErrValidate.
+		rows := sqlmock.NewRows([]string{"uuid"}).
+			AddRow("any-uuid").
+			RowError(0, errors.New("scan failed"))
+
+		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
+			WithArgs(sqlmock.AnyArg()).
+			WillReturnRows(rows)
+
+		server := httptest.NewServer(
+			http.HandlerFunc(
+				config{
+					DBInterface: db,
+				}.healthHandler,
+			),
+		)
+		defer server.Close()
+
+		resp, err := http.Get(server.URL)
+		body := decodeHTTPBody(t, resp)
+
+		require.NoError(t, mock.ExpectationsWereMet())
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, "failed to scan row", body)
+	})
+
 	t.Run("should return failed to validate row when SELECT returns no rows", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {

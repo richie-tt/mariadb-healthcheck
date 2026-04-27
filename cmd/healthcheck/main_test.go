@@ -68,3 +68,55 @@ func TestRun_gracefulShutdown(t *testing.T) {
 	require.NoError(t, srv.Shutdown(ctx))
 	require.ErrorIs(t, <-listenErr, http.ErrServerClosed)
 }
+
+func TestAwaitShutdown(t *testing.T) {
+	t.Run("shuts server down once context is canceled", func(t *testing.T) {
+		srv := setupServer(config{HealthPort: 0})
+
+		listenErr := make(chan error, 1)
+		go func() {
+			listenErr <- srv.ListenAndServe()
+		}()
+
+		// Let the listener bind before we start the shutdown waiter.
+		time.Sleep(50 * time.Millisecond)
+
+		ctx, cancel := context.WithCancel(context.Background())
+
+		done := make(chan struct{})
+		go func() {
+			awaitShutdown(ctx, srv)
+			close(done)
+		}()
+
+		cancel()
+
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatal("awaitShutdown did not return after ctx cancel")
+		}
+
+		require.ErrorIs(t, <-listenErr, http.ErrServerClosed)
+	})
+
+	t.Run("returns even when server has already stopped", func(t *testing.T) {
+		srv := setupServer(config{HealthPort: 0})
+		require.NoError(t, srv.Close())
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		done := make(chan struct{})
+		go func() {
+			awaitShutdown(ctx, srv)
+			close(done)
+		}()
+
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatal("awaitShutdown did not return when server was already closed")
+		}
+	})
+}
