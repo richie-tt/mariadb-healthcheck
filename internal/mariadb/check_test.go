@@ -87,6 +87,25 @@ func TestRunCheck(t *testing.T) {
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
+	t.Run("should return ErrScan on scan failure", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
+			WithArgs(uuid).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
+			WithArgs(uuid).
+			WillReturnRows(sqlmock.NewRows([]string{"uuid"}))
+
+		err = mariadb.RunCheck(t.Context(), db, uuid, true)
+
+		require.Error(t, err)
+		require.ErrorIs(t, err, mariadb.ErrScan)
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
+
 	t.Run("should return ErrValidate when value mismatches", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		require.NoError(t, err)
