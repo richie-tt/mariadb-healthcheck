@@ -2,7 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"mariadb"
+
+	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 
 	"github.com/google/uuid"
 )

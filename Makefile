@@ -26,7 +26,7 @@ build:
 .PHONY: deps
 deps:
 	$(info Getting dependencies)
-	go work sync
+	go mod download
 
 .PHONY: clean
 clean:
@@ -36,4 +36,4 @@ clean:
 .PHONY: test
 test:
 	$(info Running tests)
-	go test -v .
+	go test -v ./...

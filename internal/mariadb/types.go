@@ -1,10 +1,5 @@
 package mariadb
 
-// Query is a struct that contains required information to execute a query
-type Query struct {
-	Value string
-}
-
 // Connection is a struct that contains required information to connect to a database
 type Connection struct {
 	Driver   string `env:"DB_DRIVER"`
