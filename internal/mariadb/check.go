@@ -46,18 +46,14 @@ func RunCheck(ctx context.Context, db *sql.DB, uuid string, deleteRow bool) erro
 
 	var value string
 	if err := row.Scan(&value); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: inserted row not found", ErrValidate)
+		}
+
 		return fmt.Errorf("%w: %v", ErrScan, err)
 	}
 
-	if value != uuid {
-		slog.Error( //nolint:G706 // UUID has fixed format
-			"Value is not the same",
-			"expected", uuid,
-			"got", value,
-		)
-
-		return ErrValidate
-	}
+	_ = value
 
 	if deleteRow {
 		if err := DeleteRow(ctx, db, uuid); err != nil {

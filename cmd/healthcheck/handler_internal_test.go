@@ -133,7 +133,7 @@ func TestHealthHandler(t *testing.T) {
 
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
 			WithArgs(uid.String()).
-			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow("1"))
+			WillReturnRows(sqlmock.NewRows([]string{"uuid"}))
 
 		server := httptest.NewServer(
 			http.HandlerFunc(
