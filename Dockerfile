@@ -4,9 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN apk add --no-cache \
-    make=4.4.1-r3 \
-    git=2.52.0-r0 \
+RUN apk add --no-cache make git \
     && make
 
 FROM scratch AS runner
