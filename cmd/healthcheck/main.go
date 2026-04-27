@@ -88,15 +88,7 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	go func() {
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer cancel()
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			slog.Error("graceful shutdown failed", "error", err)
-		}
-	}()
+	go awaitShutdown(ctx, server)
 
 	slog.Info(
 		"starting health check server",
@@ -108,4 +100,18 @@ func run() error {
 	}
 
 	return nil
+}
+
+// awaitShutdown blocks until ctx is canceled, then triggers a graceful
+// shutdown of server bounded by shutdownTimeout. Extracted from run() so
+// it can be exercised in unit tests.
+func awaitShutdown(ctx context.Context, server *http.Server) {
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		slog.Error("graceful shutdown failed", "error", err)
+	}
 }
