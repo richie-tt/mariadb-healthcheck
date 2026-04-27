@@ -1,11 +1,11 @@
 package mariadb_test
 
 import (
+	"net"
 	"testing"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
-
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,6 +110,24 @@ func TestConnectDB_DSN_handlesSpecialChars(t *testing.T) {
 	// The pool was configured for sidecar load; verify the cap.
 	stats := db.Stats()
 	assert.Equal(t, 2, stats.MaxOpenConnections, "MaxOpenConns should be 2")
+}
+
+func TestConnectDB_DSN_passwordRoundTrip(t *testing.T) {
+	cfg := mysql.NewConfig()
+	cfg.User = "user"
+	cfg.Passwd = "p@ss:w/o?rd#" //nolint:gosec // intentional test fixture for special-char password handling
+	cfg.Net = "tcp"
+	cfg.Addr = net.JoinHostPort("127.0.0.1", "3306")
+	cfg.DBName = "healthcheck"
+
+	dsn := cfg.FormatDSN()
+
+	parsed, err := mysql.ParseDSN(dsn)
+	require.NoError(t, err)
+	assert.Equal(t, "p@ss:w/o?rd#", parsed.Passwd)
+	assert.Equal(t, "user", parsed.User)
+	assert.Equal(t, "127.0.0.1:3306", parsed.Addr)
+	assert.Equal(t, "healthcheck", parsed.DBName)
 }
 
 func TestConnectDB(t *testing.T) {
