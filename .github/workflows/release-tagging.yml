@@ -15,6 +15,10 @@ permissions:
   contents: write
   pull-requests: read
 
+concurrency:
+  group: release-tagging
+  cancel-in-progress: false
+
 jobs:
   release-on-push:
     runs-on: ubuntu-latest
