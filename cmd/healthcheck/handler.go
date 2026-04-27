@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -22,81 +23,27 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 
-	if err := mariadb.InsertRow(ctx, c.DBInterface, c.ID.String()); err != nil {
-		slog.ErrorContext(
-			ctx,
-			"failed to insert row",
-			"error", err,
-		)
+	err := mariadb.RunCheck(ctx, c.DBInterface, c.ID.String(), c.DeleteRow)
+	if err == nil {
+		w.WriteHeader(http.StatusOK)
+		writeBody(w, "OK")
+		return
+	}
 
-		w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(http.StatusInternalServerError)
+
+	switch {
+	case errors.Is(err, mariadb.ErrInsert):
 		writeBody(w, "failed to insert row")
-		return
-	}
-
-	slog.Debug( //nolint:G706 // UUID has fixed format
-		"Executed query to insert row",
-		"UUID", c.ID,
-	)
-
-	row, err := mariadb.SelectRow(ctx, c.DBInterface, c.ID.String())
-	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"failed to select row",
-			"error", err,
-		)
-
-		w.WriteHeader(http.StatusInternalServerError)
+	case errors.Is(err, mariadb.ErrSelect):
 		writeBody(w, "failed to select row")
-		return
-	}
-
-	slog.Debug( //nolint:G706 // UUID has fixed format
-		"Executed query to select row",
-		"UUID", c.ID,
-	)
-
-	var value string
-	if err := row.Scan(&value); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	case errors.Is(err, mariadb.ErrScan):
 		writeBody(w, "failed to scan row")
-		return
-	}
-
-	if value != c.ID.String() {
-		slog.Error( //nolint:G706 // UUID has fixed format
-			"Value is not the same",
-			"expected", c.ID.String(),
-			"got", value,
-		)
-
-		w.WriteHeader(http.StatusInternalServerError)
+	case errors.Is(err, mariadb.ErrValidate):
 		writeBody(w, "failed to validate row")
-		return
+	case errors.Is(err, mariadb.ErrDelete):
+		writeBody(w, "failed to delete row")
 	}
-
-	if c.DeleteRow {
-		if err := mariadb.DeleteRow(ctx, c.DBInterface, c.ID.String()); err != nil {
-			slog.ErrorContext(
-				ctx,
-				"failed to delete row",
-				"error", err,
-			)
-
-			w.WriteHeader(http.StatusInternalServerError)
-			writeBody(w, "failed to delete row")
-			return
-		}
-
-		slog.Debug( //nolint:G706 // UUID has fixed format
-			"Executed query to delete row",
-			"UUID", c.ID,
-		)
-	}
-
-	w.WriteHeader(http.StatusOK)
-	writeBody(w, "OK")
 }
 
 func writeBody(w http.ResponseWriter, message string) {
