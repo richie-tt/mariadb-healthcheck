@@ -9,6 +9,43 @@ import (
 	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 )
 
+// or returns value when it is non-empty, otherwise fallback.
+func or(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+
+	return value
+}
+
+// intOr parses value as an int; returns fallback when value is empty.
+func intOr(value string, fallback int) (int, error) {
+	if value == "" {
+		return fallback, nil
+	}
+
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid integer %q: %w", value, err)
+	}
+
+	return n, nil
+}
+
+// boolOr parses value as a bool; returns fallback when value is empty.
+func boolOr(value string, fallback bool) (bool, error) {
+	if value == "" {
+		return fallback, nil
+	}
+
+	b, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("invalid bool %q: %w", value, err)
+	}
+
+	return b, nil
+}
+
 func getEnv() environment {
 	return environment{
 		Connection: mariadb.Connection{
@@ -26,40 +63,23 @@ func getEnv() environment {
 }
 
 func (e environment) parseEnv() (*config, error) {
-	config := config{
-		Connection: e.Connection,
-		LogLevel:   e.LogLevel,
-	}
-
-	if config.Connection.Database == "" {
-		config.Connection.Database = defaultDBName
-	}
-
-	if config.Connection.Host == "" {
-		config.Connection.Host = defaultDBHost
-	}
-
-	if config.Connection.Port == "" {
-		config.Connection.Port = defaultDBPort
-	}
-
-	if config.Connection.User == "" {
-		config.Connection.User = defaultDBUser
-	}
-
-	if config.Connection.Password == "" {
+	if e.Connection.Password == "" {
 		return nil, fmt.Errorf("DB_PASSWORD environment variable is required")
 	}
 
-	if e.LogLevel == "" {
-		config.LogLevel = "info"
-		slog.Info(
-			"using default log level",
-			"value", config.LogLevel,
-		)
+	cfg := config{
+		Connection: mariadb.Connection{
+			Driver:   "mysql",
+			Database: or(e.Connection.Database, defaultDBName),
+			Host:     or(e.Connection.Host, defaultDBHost),
+			Password: e.Connection.Password,
+			Port:     or(e.Connection.Port, defaultDBPort),
+			User:     or(e.Connection.User, defaultDBUser),
+		},
+		LogLevel: or(e.LogLevel, "info"),
 	}
 
-	logLevel, err := config.getLogLevel()
+	level, err := cfg.getLogLevel()
 	if err != nil {
 		slog.Error(
 			"failed to get log level, available levels: debug, info, warn, error",
@@ -74,53 +94,29 @@ func (e environment) parseEnv() (*config, error) {
 			slog.NewTextHandler(
 				os.Stdout,
 				&slog.HandlerOptions{
-					Level: logLevel,
+					Level: level,
 				},
 			),
 		),
 	)
 
-	if e.DeleteRow == "" {
-		config.DeleteRow = true
-		slog.Debug(
-			"using default delete row",
-			"value", config.DeleteRow,
-		)
+	port, err := intOr(e.HealthPort, defaultHTTPPort)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HealthPort: %w", err)
 	}
 
-	if e.HealthPort == "" {
-		config.HealthPort = 8080
-		slog.Debug(
-			"using default health port",
-			"value", config.HealthPort,
-		)
+	cfg.HealthPort = port
+
+	clean, err := boolOr(e.DeleteRow, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse DeleteRow: %w", err)
 	}
 
-	if e.HealthPort != "" {
-		healthPort, err := strconv.Atoi(e.HealthPort)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse HealthPort: %w", err)
-		}
+	cfg.DeleteRow = clean
 
-		config.HealthPort = healthPort
+	if !clean {
+		slog.Warn("delete row is disabled")
 	}
 
-	if e.DeleteRow != "" {
-		deleteRow, err := strconv.ParseBool(e.DeleteRow)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse DeleteRow: %w", err)
-		}
-
-		if !deleteRow {
-			slog.Warn("delete row is disabled")
-		}
-
-		config.DeleteRow = deleteRow
-		slog.Debug(
-			"parsed delete row",
-			"value", config.DeleteRow,
-		)
-	}
-
-	return &config, nil
+	return &cfg, nil
 }
