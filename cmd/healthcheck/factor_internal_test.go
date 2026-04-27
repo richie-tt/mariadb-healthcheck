@@ -32,6 +32,7 @@ func TestGetEnv(t *testing.T) {
 
 func TestParseEnv(t *testing.T) {
 	t.Run("should return default values for database", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(dbName, "")
 		parsedEnv, err := getEnv().parseEnv()
 
@@ -40,6 +41,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return default values for host", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(dbHost, "")
 		parsedEnv, err := getEnv().parseEnv()
 
@@ -48,6 +50,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return default values for port", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(dbPort, "")
 		parsedEnv, err := getEnv().parseEnv()
 
@@ -56,6 +59,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return default values for user", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(dbUser, "")
 		parsedEnv, err := getEnv().parseEnv()
 
@@ -63,15 +67,26 @@ func TestParseEnv(t *testing.T) {
 		assert.Equal(t, "healthcheck", parsedEnv.Connection.User)
 	})
 
-	t.Run("should return default values for password", func(t *testing.T) {
-		t.Setenv(dbPassword, "")
+	t.Run("should accept an explicit DB_PASSWORD", func(t *testing.T) {
+		t.Setenv(dbPassword, "explicit")
+
 		parsedEnv, err := getEnv().parseEnv()
 
 		require.NoError(t, err)
-		assert.Equal(t, "healthcheck", parsedEnv.Connection.Password)
+		assert.Equal(t, "explicit", parsedEnv.Connection.Password)
+	})
+
+	t.Run("should return error when DB_PASSWORD is empty", func(t *testing.T) {
+		t.Setenv(dbPassword, "")
+
+		_, err := getEnv().parseEnv()
+
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "DB_PASSWORD environment variable is required")
 	})
 
 	t.Run("should return default values for logLevel", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(logLevel, "")
 		parsedEnv, err := getEnv().parseEnv()
 
@@ -80,6 +95,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return error for invalid logLevel", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(logLevel, "invalid")
 
 		_, err := getEnv().parseEnv()
@@ -89,6 +105,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return default values for healthPort", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		parsedEnv, err := getEnv().parseEnv()
 
 		require.NoError(t, err)
@@ -96,6 +113,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return error for invalid healthPort", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(healthPort, "invalid")
 		_, err := getEnv().parseEnv()
 
@@ -104,6 +122,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return parsed custom values for healthPort", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(healthPort, "8081")
 		parsedEnv, err := getEnv().parseEnv()
 
@@ -112,6 +131,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return default values for cleanTable", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		parsedEnv, err := getEnv().parseEnv()
 
 		require.NoError(t, err)
@@ -119,6 +139,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return error for invalid deleteRow", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(deleteRow, "invalid")
 		_, err := getEnv().parseEnv()
 
@@ -127,6 +148,7 @@ func TestParseEnv(t *testing.T) {
 	})
 
 	t.Run("should return parsed custom values for deleteRow", func(t *testing.T) {
+		t.Setenv(dbPassword, "test")
 		t.Setenv(deleteRow, "false")
 		parsedEnv, err := getEnv().parseEnv()
 

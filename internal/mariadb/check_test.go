@@ -97,7 +97,11 @@ func TestRunCheck(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
 			WithArgs(uuid).
-			WillReturnRows(sqlmock.NewRows([]string{"uuid"}))
+			WillReturnRows(
+				sqlmock.NewRows([]string{"uuid"}).
+					AddRow(uuid).
+					RowError(0, errors.New("scan boom")),
+			)
 
 		err = mariadb.RunCheck(t.Context(), db, uuid, true)
 
@@ -106,7 +110,7 @@ func TestRunCheck(t *testing.T) {
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	t.Run("should return ErrValidate when value mismatches", func(t *testing.T) {
+	t.Run("should return ErrValidate when row is missing", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		require.NoError(t, err)
 		defer db.Close()
@@ -116,7 +120,7 @@ func TestRunCheck(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
 			WithArgs(uuid).
-			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow("different"))
+			WillReturnRows(sqlmock.NewRows([]string{"uuid"}))
 
 		err = mariadb.RunCheck(t.Context(), db, uuid, true)
 

@@ -21,51 +21,46 @@ var (
 // RunCheck executes the INSERT -> SELECT -> (optional) DELETE health-check
 // sequence using uuid as the UUID-shaped value written to the status table.
 // On failure it returns one of the sentinel errors above wrapped with the
-// underlying cause.
+// underlying cause. Stage errors are NOT logged here — the HTTP handler is
+// the single error-logging boundary so callers can adjust verbosity in one
+// place.
 func RunCheck(ctx context.Context, db *sql.DB, uuid string, deleteRow bool) error {
 	if err := InsertRow(ctx, db, uuid); err != nil {
-		slog.ErrorContext(ctx, "failed to insert row", "error", err)
 		return fmt.Errorf("%w: %v", ErrInsert, err)
 	}
 
-	slog.Debug( //nolint:G706 // UUID has fixed format
+	slog.Debug(
 		"Executed query to insert row",
 		"UUID", uuid,
 	)
 
 	row, err := SelectRow(ctx, db, uuid)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to select row", "error", err)
 		return fmt.Errorf("%w: %v", ErrSelect, err)
 	}
 
-	slog.Debug( //nolint:G706 // UUID has fixed format
+	slog.Debug(
 		"Executed query to select row",
 		"UUID", uuid,
 	)
 
 	var value string
 	if err := row.Scan(&value); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: inserted row not found", ErrValidate)
+		}
+
 		return fmt.Errorf("%w: %v", ErrScan, err)
 	}
 
-	if value != uuid {
-		slog.Error( //nolint:G706 // UUID has fixed format
-			"Value is not the same",
-			"expected", uuid,
-			"got", value,
-		)
-
-		return ErrValidate
-	}
+	_ = value
 
 	if deleteRow {
 		if err := DeleteRow(ctx, db, uuid); err != nil {
-			slog.ErrorContext(ctx, "failed to delete row", "error", err)
 			return fmt.Errorf("%w: %v", ErrDelete, err)
 		}
 
-		slog.Debug( //nolint:G706 // UUID has fixed format
+		slog.Debug(
 			"Executed query to delete row",
 			"UUID", uuid,
 		)

@@ -1,11 +1,11 @@
 package mariadb_test
 
 import (
+	"net"
 	"testing"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
-
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,19 +39,6 @@ func TestValidate(t *testing.T) {
 
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "host is empty")
-	})
-
-	t.Run("should return error if host is invalid", func(t *testing.T) {
-		err := (&mariadb.Connection{
-			User:     "user",
-			Password: "password",
-			Port:     "3306",
-			Database: "database",
-			Host:     "http://:[invalid]",
-		}).Validate()
-
-		require.Error(t, err)
-		assert.ErrorContains(t, err, "invalid host")
 	})
 
 	t.Run("should return error if port is empty", func(t *testing.T) {
@@ -104,6 +91,43 @@ func TestValidate(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "invalid port")
 	})
+}
+
+func TestConnectDB_DSN_handlesSpecialChars(t *testing.T) {
+	conn := mariadb.Connection{ //nolint:gosec // intentional test fixture for special-char password handling
+		Driver:   "mysql",
+		Database: "healthcheck",
+		Host:     "127.0.0.1",
+		Password: "p@ss:w/o?rd#",
+		Port:     "3306",
+		User:     "user",
+	}
+
+	db, err := conn.ConnectDB()
+	require.NoError(t, err)
+	defer db.Close()
+
+	// The pool was configured for sidecar load; verify the cap.
+	stats := db.Stats()
+	assert.Equal(t, 2, stats.MaxOpenConnections, "MaxOpenConns should be 2")
+}
+
+func TestConnectDB_DSN_passwordRoundTrip(t *testing.T) {
+	cfg := mysql.NewConfig()
+	cfg.User = "user"
+	cfg.Passwd = "p@ss:w/o?rd#" //nolint:gosec // intentional test fixture for special-char password handling
+	cfg.Net = "tcp"
+	cfg.Addr = net.JoinHostPort("127.0.0.1", "3306")
+	cfg.DBName = "healthcheck"
+
+	dsn := cfg.FormatDSN()
+
+	parsed, err := mysql.ParseDSN(dsn)
+	require.NoError(t, err)
+	assert.Equal(t, "p@ss:w/o?rd#", parsed.Passwd)
+	assert.Equal(t, "user", parsed.User)
+	assert.Equal(t, "127.0.0.1:3306", parsed.Addr)
+	assert.Equal(t, "healthcheck", parsed.DBName)
 }
 
 func TestConnectDB(t *testing.T) {

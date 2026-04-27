@@ -3,10 +3,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -47,10 +51,12 @@ func setupServer(config config) *http.Server {
 	mux.HandleFunc("/health", config.healthHandler)
 
 	return &http.Server{
-		Addr:         fmt.Sprintf(":%d", config.HealthPort),
-		Handler:      mux,
-		ReadTimeout:  httpReadTimeout,
-		WriteTimeout: httpWriteTimeout,
+		Addr:              fmt.Sprintf(":%d", config.HealthPort),
+		Handler:           mux,
+		ReadTimeout:       httpReadTimeout,
+		ReadHeaderTimeout: httpReadHeaderTimeout,
+		WriteTimeout:      httpWriteTimeout,
+		IdleTimeout:       httpIdleTimeout,
 	}
 }
 
@@ -79,16 +85,33 @@ func run() error {
 
 	server := setupServer(*config)
 
-	defer server.Close()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go awaitShutdown(ctx, server)
 
 	slog.Info(
 		"starting health check server",
 		"port", config.HealthPort,
 	)
 
-	if err := server.ListenAndServe(); err != nil {
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
 	return nil
+}
+
+// awaitShutdown blocks until ctx is canceled, then triggers a graceful
+// shutdown of server bounded by shutdownTimeout. Extracted from run() so
+// it can be exercised in unit tests.
+func awaitShutdown(ctx context.Context, server *http.Server) {
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		slog.Error("graceful shutdown failed", "error", err)
+	}
 }

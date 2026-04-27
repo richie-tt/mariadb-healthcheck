@@ -12,13 +12,16 @@ const (
 	deleteRow  = "DELETE_ROW"
 	healthPort = "HEALTH_PORT"
 
-	contextTimeout   = time.Second * 5
-	httpReadTimeout  = time.Second * 5
-	httpWriteTimeout = time.Second * 5
+	contextTimeout        = time.Second * 5
+	httpReadTimeout       = time.Second * 5
+	httpReadHeaderTimeout = time.Second * 5
+	httpWriteTimeout      = time.Second * 5
+	httpIdleTimeout       = time.Second * 30
+	shutdownTimeout       = time.Second * 5
 
-	defaultDBUser     = "healthcheck"
-	defaultDBPassword = "healthcheck"
-	defaultDBHost     = "127.0.0.1"
-	defaultDBPort     = "3306"
-	defaultDBName     = "healthcheck"
+	defaultDBUser   = "healthcheck"
+	defaultDBHost   = "127.0.0.1"
+	defaultDBPort   = "3306"
+	defaultDBName   = "healthcheck"
+	defaultHTTPPort = 8080
 )

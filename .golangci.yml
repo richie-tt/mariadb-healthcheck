@@ -55,6 +55,8 @@ linters:
     varnamelen:
       ignore-names:
         - db
+        - id
+        - r
         - w
   exclusions:
     generated: lax

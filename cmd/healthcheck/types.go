@@ -4,8 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
-
-	"github.com/google/uuid"
 )
 
 type environment struct {
@@ -20,6 +18,5 @@ type config struct {
 	DBInterface *sql.DB
 	DeleteRow   bool
 	HealthPort  int
-	ID          uuid.UUID
 	LogLevel    string
 }

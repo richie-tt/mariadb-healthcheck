@@ -4,6 +4,10 @@ coverage:
       default:
         target: 85%    # the required coverage value
         threshold: 1%  # the leniency in hitting the target
+    patch:
+      default:
+        target: 85%    # required coverage for newly-changed lines
+        threshold: 5%  # leniency: small patches can swing significantly
 
 component_management:
   individual_components:

@@ -10,25 +10,28 @@ import (
 	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 )
 
-func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
-	if c.ID == uuid.Nil {
-		c.ID = uuid.New()
+func (c config) healthHandler(w http.ResponseWriter, r *http.Request) {
+	id := uuid.New()
 
-		slog.Debug( //nolint:G706 // UUID has fixed format
-			"generated UUID",
-			"value", c.ID,
-		)
-	}
+	slog.Debug(
+		"generated UUID",
+		"value", id,
+	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), contextTimeout)
 	defer cancel()
 
-	err := mariadb.RunCheck(ctx, c.DBInterface, c.ID.String(), c.DeleteRow)
+	err := mariadb.RunCheck(ctx, c.DBInterface, id.String(), c.DeleteRow)
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
 	if err == nil {
 		w.WriteHeader(http.StatusOK)
 		writeBody(w, "OK")
 		return
 	}
+
+	slog.ErrorContext(ctx, "healthcheck failed", "error", err)
 
 	w.WriteHeader(http.StatusInternalServerError)
 
@@ -43,6 +46,8 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		writeBody(w, "failed to validate row")
 	case errors.Is(err, mariadb.ErrDelete):
 		writeBody(w, "failed to delete row")
+	default:
+		writeBody(w, "healthcheck failed")
 	}
 }
 
