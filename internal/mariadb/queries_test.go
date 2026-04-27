@@ -2,8 +2,9 @@ package mariadb_test
 
 import (
 	"errors"
-	"mariadb"
 	"testing"
+
+	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"

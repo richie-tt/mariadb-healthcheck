@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"log/slog"
-	"mariadb"
 	"os"
 	"strconv"
+
+	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 )
 
 func getEnv() environment {

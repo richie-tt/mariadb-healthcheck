@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"log/slog"
-	"mariadb"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 )
 
 func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
