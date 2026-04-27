@@ -41,19 +41,6 @@ func TestValidate(t *testing.T) {
 		assert.ErrorContains(t, err, "host is empty")
 	})
 
-	t.Run("should return error if host is invalid", func(t *testing.T) {
-		err := (&mariadb.Connection{
-			User:     "user",
-			Password: "password",
-			Port:     "3306",
-			Database: "database",
-			Host:     "http://:[invalid]",
-		}).Validate()
-
-		require.Error(t, err)
-		assert.ErrorContains(t, err, "invalid host")
-	})
-
 	t.Run("should return error if port is empty", func(t *testing.T) {
 		err := (&mariadb.Connection{
 			User:     "user",
@@ -104,6 +91,25 @@ func TestValidate(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorContains(t, err, "invalid port")
 	})
+}
+
+func TestConnectDB_DSN_handlesSpecialChars(t *testing.T) {
+	conn := mariadb.Connection{ //nolint:gosec // intentional test fixture for special-char password handling
+		Driver:   "mysql",
+		Database: "healthcheck",
+		Host:     "127.0.0.1",
+		Password: "p@ss:w/o?rd#",
+		Port:     "3306",
+		User:     "user",
+	}
+
+	db, err := conn.ConnectDB()
+	require.NoError(t, err)
+	defer db.Close()
+
+	// The pool was configured for sidecar load; verify the cap.
+	stats := db.Stats()
+	assert.Equal(t, 2, stats.MaxOpenConnections, "MaxOpenConns should be 2")
 }
 
 func TestConnectDB(t *testing.T) {

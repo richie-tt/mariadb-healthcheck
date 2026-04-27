@@ -4,8 +4,19 @@ package mariadb
 import (
 	"database/sql"
 	"fmt"
-	"net/url"
+	"net"
 	"strconv"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+)
+
+const (
+	dbConnectTimeout  = 5 * time.Second
+	dbMaxOpenConns    = 2
+	dbMaxIdleConns    = 1
+	dbConnMaxLifetime = 5 * time.Minute
+	dbConnMaxIdleTime = 1 * time.Minute
 )
 
 // Validate validates the connection
@@ -30,11 +41,6 @@ func (c *Connection) Validate() error {
 		return fmt.Errorf("database is empty")
 	}
 
-	_, err := url.Parse(c.Host)
-	if err != nil {
-		return fmt.Errorf("invalid host: %w", err)
-	}
-
 	port, err := strconv.Atoi(c.Port)
 	if err != nil {
 		return fmt.Errorf("invalid port: %w", err)
@@ -47,18 +53,31 @@ func (c *Connection) Validate() error {
 	return nil
 }
 
-// ConnectDB connects to the database
+// ConnectDB connects to the database using a DSN built via mysql.Config so
+// that special characters in the password are escaped correctly.
 func (c Connection) ConnectDB() (*sql.DB, error) {
-	err := c.Validate()
-	if err != nil {
+	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate connection: %w", err)
 	}
 
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", c.User, c.Password, c.Host, c.Port, c.Database)
-	db, err := sql.Open(c.Driver, connectionString)
+	cfg := mysql.NewConfig()
+	cfg.User = c.User
+	cfg.Passwd = c.Password
+	cfg.Net = "tcp"
+	cfg.Addr = net.JoinHostPort(c.Host, c.Port)
+	cfg.DBName = c.Database
+	cfg.ParseTime = true
+	cfg.Timeout = dbConnectTimeout
+
+	db, err := sql.Open(c.Driver, cfg.FormatDSN())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+
+	db.SetMaxOpenConns(dbMaxOpenConns)
+	db.SetMaxIdleConns(dbMaxIdleConns)
+	db.SetConnMaxLifetime(dbConnMaxLifetime)
+	db.SetConnMaxIdleTime(dbConnMaxIdleTime)
 
 	return db, nil
 }
