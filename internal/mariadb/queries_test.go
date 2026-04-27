@@ -4,9 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
-
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/richie-tt/mariadb-healthcheck/internal/mariadb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,9 +22,7 @@ func TestInsertRow(t *testing.T) {
 			WithArgs("1").
 			WillReturnError(errors.New("insert failed"))
 
-		err = mariadb.Query{
-			Value: "1",
-		}.InsertRow(t.Context(), db)
+		err = mariadb.InsertRow(t.Context(), db, "1")
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		require.Error(t, err)
@@ -43,9 +40,7 @@ func TestInsertRow(t *testing.T) {
 			WithArgs("1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err = mariadb.Query{
-			Value: "1",
-		}.InsertRow(t.Context(), db)
+		err = mariadb.InsertRow(t.Context(), db, "1")
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		assert.NoError(t, err)
@@ -64,9 +59,7 @@ func TestSelectRow(t *testing.T) {
 			WithArgs("1").
 			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow("1"))
 
-		row, err := mariadb.Query{
-			Value: "1",
-		}.SelectRow(t.Context(), db)
+		row, err := mariadb.SelectRow(t.Context(), db, "1")
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		assert.NoError(t, err)
@@ -84,9 +77,7 @@ func TestSelectRow(t *testing.T) {
 			WithArgs("1").
 			WillReturnError(errors.New("select failed"))
 
-		_, err = mariadb.Query{
-			Value: "1",
-		}.SelectRow(t.Context(), db)
+		_, err = mariadb.SelectRow(t.Context(), db, "1")
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		require.Error(t, err)
@@ -106,9 +97,7 @@ func TestDeleteRow(t *testing.T) {
 			WithArgs("1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err = mariadb.Query{
-			Value: "1",
-		}.DeleteRow(t.Context(), db)
+		err = mariadb.DeleteRow(t.Context(), db, "1")
 
 		require.NoError(t, mock.ExpectationsWereMet())
 		assert.NoError(t, err)
@@ -125,9 +114,7 @@ func TestDeleteRow(t *testing.T) {
 			WithArgs("1").
 			WillReturnError(errors.New("delete failed"))
 
-		err = mariadb.Query{
-			Value: "1",
-		}.DeleteRow(t.Context(), db)
+		err = mariadb.DeleteRow(t.Context(), db, "1")
 
 		require.Error(t, err)
 		require.NoError(t, mock.ExpectationsWereMet())

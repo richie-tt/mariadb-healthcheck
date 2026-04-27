@@ -22,11 +22,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 
-	query := mariadb.Query{
-		Value: c.ID.String(),
-	}
-
-	if err := query.InsertRow(ctx, c.DBInterface); err != nil {
+	if err := mariadb.InsertRow(ctx, c.DBInterface, c.ID.String()); err != nil {
 		slog.ErrorContext(
 			ctx,
 			"failed to insert row",
@@ -43,7 +39,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 		"UUID", c.ID,
 	)
 
-	row, err := query.SelectRow(ctx, c.DBInterface)
+	row, err := mariadb.SelectRow(ctx, c.DBInterface, c.ID.String())
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
@@ -81,7 +77,7 @@ func (c config) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	if c.DeleteRow {
-		if err := query.DeleteRow(ctx, c.DBInterface); err != nil {
+		if err := mariadb.DeleteRow(ctx, c.DBInterface, c.ID.String()); err != nil {
 			slog.ErrorContext(
 				ctx,
 				"failed to delete row",
