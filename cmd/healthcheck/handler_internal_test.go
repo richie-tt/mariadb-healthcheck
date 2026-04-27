@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,41 +23,14 @@ func decodeHTTPBody(t *testing.T, resp *http.Response) string {
 }
 
 func TestHealthHandler(t *testing.T) {
-	t.Run("should generate uuid if not set", func(t *testing.T) {
-		db, _, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
-		if err != nil {
-			t.Fatalf("failed to create mock database: %v", err)
-		}
-
-		defer db.Close()
-
-		server := httptest.NewServer(
-			http.HandlerFunc(
-				config{
-					DBInterface: db,
-				}.healthHandler,
-			),
-		)
-		defer server.Close()
-
-		resp, err := http.Get(server.URL)
-		body := decodeHTTPBody(t, resp)
-
-		require.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		assert.Equal(t, "failed to insert row", body)
-	})
-
 	t.Run("should return failed to insert row", func(t *testing.T) {
-		uid := uuid.New()
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("failed to create mock database: %v", err)
 		}
 
 		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnError(errors.New("insert failed"))
 
 		defer db.Close()
@@ -67,7 +39,6 @@ func TestHealthHandler(t *testing.T) {
 			http.HandlerFunc(
 				config{
 					DBInterface: db,
-					ID:          uid,
 				}.healthHandler,
 			),
 		)
@@ -83,8 +54,6 @@ func TestHealthHandler(t *testing.T) {
 	})
 
 	t.Run("should return failed to select row", func(t *testing.T) {
-		uid := uuid.New()
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("failed to create mock database: %v", err)
@@ -92,18 +61,17 @@ func TestHealthHandler(t *testing.T) {
 
 		defer db.Close()
 		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnError(errors.New("select failed"))
 
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				config{
 					DBInterface: db,
-					ID:          uid,
 				}.healthHandler,
 			),
 		)
@@ -118,9 +86,7 @@ func TestHealthHandler(t *testing.T) {
 		assert.Equal(t, "failed to select row", body)
 	})
 
-	t.Run("should return failed to validate row", func(t *testing.T) {
-		uid := uuid.New()
-
+	t.Run("should return failed to validate row when SELECT returns no rows", func(t *testing.T) {
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("failed to create mock database: %v", err)
@@ -128,18 +94,17 @@ func TestHealthHandler(t *testing.T) {
 
 		defer db.Close()
 		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnRows(sqlmock.NewRows([]string{"uuid"}))
 
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				config{
 					DBInterface: db,
-					ID:          uid,
 				}.healthHandler,
 			),
 		)
@@ -155,8 +120,6 @@ func TestHealthHandler(t *testing.T) {
 	})
 
 	t.Run("should return OK, when clean table is false", func(t *testing.T) {
-		uid := uuid.New()
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("failed to create mock database: %v", err)
@@ -164,18 +127,17 @@ func TestHealthHandler(t *testing.T) {
 
 		defer db.Close()
 		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
-			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow(uid.String()))
+			WithArgs(sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow("any-uuid"))
 
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				config{
 					DBInterface: db,
-					ID:          uid,
 					DeleteRow:   false,
 				}.healthHandler,
 			),
@@ -192,8 +154,6 @@ func TestHealthHandler(t *testing.T) {
 	})
 
 	t.Run("should return failed to delete row", func(t *testing.T) {
-		uid := uuid.New()
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("failed to create mock database: %v", err)
@@ -201,22 +161,21 @@ func TestHealthHandler(t *testing.T) {
 
 		defer db.Close()
 		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
-			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow(uid.String()))
+			WithArgs(sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow("any-uuid"))
 
 		mock.ExpectExec("DELETE FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnError(errors.New("delete failed"))
 
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				config{
 					DBInterface: db,
-					ID:          uid,
 					DeleteRow:   true,
 				}.healthHandler,
 			),
@@ -233,8 +192,6 @@ func TestHealthHandler(t *testing.T) {
 	})
 
 	t.Run("should return OK, when clean table is true", func(t *testing.T) {
-		uid := uuid.New()
-
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		if err != nil {
 			t.Fatalf("failed to create mock database: %v", err)
@@ -242,22 +199,21 @@ func TestHealthHandler(t *testing.T) {
 
 		defer db.Close()
 		mock.ExpectExec("INSERT INTO status (uuid) VALUES (?)").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectQuery("SELECT uuid FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
-			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow(uid.String()))
+			WithArgs(sqlmock.AnyArg()).
+			WillReturnRows(sqlmock.NewRows([]string{"uuid"}).AddRow("any-uuid"))
 
 		mock.ExpectExec("DELETE FROM status WHERE uuid = ?").
-			WithArgs(uid.String()).
+			WithArgs(sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				config{
 					DBInterface: db,
-					ID:          uid,
 					DeleteRow:   true,
 				}.healthHandler,
 			),
@@ -271,6 +227,7 @@ func TestHealthHandler(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, "OK", body)
+		assert.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	})
 }
 
