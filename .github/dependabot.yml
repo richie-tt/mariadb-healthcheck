@@ -14,6 +14,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      docker-actions:
+        patterns: ["docker/*"]
+      github-actions:
+        patterns: ["actions/*"]
+      other-actions:
+        patterns: ["*"]
+        exclude-patterns: ["docker/*", "actions/*"]
 
   - package-ecosystem: "docker"
     directory: "/"
